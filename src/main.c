@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
     int opt;
     int a_flag = 0;
 
-    // Check if the -a flag is set
+    // Parse the input flags
     while ((opt = getopt(argc, argv, "a")) != -1) {
         switch(opt) {
             case 'a':
@@ -28,6 +28,7 @@ int main(int argc, char **argv) {
         }
     }
 
+    // Get the directory name from the argument list if it is present
     if (optind < argc) {
         dir_path = argv[optind];
     }
@@ -45,7 +46,7 @@ int main(int argc, char **argv) {
 
     // Read all entries in the directory stream
     while ((entry = readdir(directory)) != NULL) {
-        if (strlen(entry->d_name) > 0 && entry->d_name[0] != '.')
+        if (strlen(entry->d_name) > 0 && (entry->d_name[0] != '.' || a_flag))
             printf("%s  ", entry->d_name);
     }
     printf("\n");

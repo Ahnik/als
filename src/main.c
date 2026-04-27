@@ -5,13 +5,28 @@
 #include <stdlib.h>
 
 int main(int argc, char **argv) {
-    DIR *directory = opendir(".");
+    DIR *directory;
+    struct dirent *entry;
+
+    // Set errno to 0
+    errno = 0;
+
+    // Open the directory stream
+    directory = opendir(".");
 
     if (directory == NULL) {
-        perror("Error opening directory");
+        perror("Error opening directory directory");
         return EXIT_FAILURE;
-    } else {
-        printf("The directory has been successfully openened!\n");
+    }
+
+    // Read all entries in the directory stream
+    while ((entry = readdir(directory)) != NULL) {
+        printf("%s\n", entry->d_name);
+    }
+
+    if (errno != 0) {
+        perror("Error reading directory");
+        return EXIT_FAILURE;
     }
 
     closedir(directory);

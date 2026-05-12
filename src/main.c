@@ -3,20 +3,26 @@
 #include <dirent.h>
 #include <errno.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include <sys/stat.h>
 
 // Maximum length for a complete pathname
 #define PATH_MAX 4096
 
+// Size of the permission string
+#define PERMISSION_STRING_SIZE 11
+
 // Function to print the long version of a directory entry
 void print_long_list(const char *pathname);
 
+// Function to extract read, write and execute permissions of the owner, group and others
+const char *get_permission(mode_t file_mode);
+
 // Function to join the directory name and the filename together to form pathname
-char *get_pathname(const char *dir_path, const char *filename);
+const char *get_pathname(const char *dir_path, const char *filename);
 
 int main(int argc, char **argv) {
     // Variables used
@@ -94,10 +100,11 @@ void print_long_list(const char *pathname) {
     }
 
     /* TODO: Write logic to print the long version of ls of a file entry */
-    printf("%s\n", pathname);
+    const char *file_permission = get_permission(file_stat.st_mode);
+    printf("%s\n", file_permission);
 }
 
-char *get_pathname(const char *dir_path, const char *filename) {
+const char *get_pathname(const char *dir_path, const char *filename) {
     // Make the buffer static so that the memory persists for the lifetime of the program
     static char pathname[PATH_MAX];
     snprintf(pathname, PATH_MAX, "%s", dir_path);
@@ -110,4 +117,57 @@ char *get_pathname(const char *dir_path, const char *filename) {
     strncat(pathname, filename, PATH_MAX - strlen(pathname) - 1);
 
     return pathname;
+}
+
+const char *get_permission(mode_t file_mode) {
+    // Declare the static buffer for the permission string
+    static char file_permission[PERMISSION_STRING_SIZE];
+
+    // Set the entire permission string with hyphens by default
+    for (int i = 0; i < PERMISSION_STRING_SIZE-1; i++) {
+        file_permission[i] = '-';
+    }
+    file_permission[PERMISSION_STRING_SIZE-1] = 0;
+
+    // Check if the file is a directory or not
+    if (S_ISDIR(file_mode))
+        file_permission[0] = 'd';
+
+    // Check for read permission of the owner
+    if ((file_mode & S_IRUSR) == S_IRUSR)
+        file_permission[1] = 'r';
+
+    // Check for write permission of the owner
+    if ((file_mode & S_IWUSR) == S_IWUSR)
+        file_permission[2] = 'w';
+
+    // Check for execute permission of the owner
+    if ((file_mode & S_IXUSR) == S_IXUSR)
+        file_permission[3] = 'x';
+
+    // Check for read permission of the group
+    if ((file_mode & S_IRGRP) == S_IRGRP)
+        file_permission[4] = 'r';
+
+    // Check for write permission of the group
+    if ((file_mode & S_IWGRP) == S_IWGRP)
+        file_permission[5] = 'w';
+
+    // Check for execute permission of the group
+    if ((file_mode & S_IXGRP) == S_IXGRP)
+        file_permission[6] = 'x';
+
+    // Check for read permission of others
+    if ((file_mode & S_IROTH) == S_IROTH)
+        file_permission[7] = 'r';
+
+    // Check for write permission of others
+    if ((file_mode & S_IWOTH) == S_IWOTH)
+        file_permission[8] = 'w';
+
+    // Check for execute permission of others
+    if ((file_mode & S_IXOTH) == S_IXOTH)
+        file_permission[9] = 'x';
+
+    return file_permission;
 }

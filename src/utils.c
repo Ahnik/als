@@ -9,13 +9,17 @@
 #include <time.h>
 #include "utils.h"
 
-FileStats get_file_stats(const char *dir_path, struct dirent *entry) {
-    FileStats stats;                // Struct for storing the final formatted file stats
+FileStats *get_file_stats(const char *dir_path, struct dirent *entry) {
+    FileStats *stats;               // Struct for storing the final formatted file stats
     const char *pathname;           // Pathname of the directory or file that we are printing
     struct stat file_stat;          // Struct for storing file stats
     struct passwd *pwd;             // Struct containing user information of the owner of the file
     struct group *grp;              // Struct containing group information of the group of users using the file
     struct tm *last_modification;   // Struct representing the time of last modification
+
+    // Allocate memory for the stats struct
+    stats = (FileStats *) malloc(sizeof(FileStats));
+    if (stats == NULL) return NULL;
 
     // Get the full pathname
     pathname = get_pathname(dir_path, entry->d_name);
@@ -27,38 +31,38 @@ FileStats get_file_stats(const char *dir_path, struct dirent *entry) {
     }
 
     // Enter the inode number
-    stats.inode = entry->d_ino;
+    stats->inode = entry->d_ino;
 
     // Enter the password string
-    stats.permission_string = get_permission(file_stat.st_mode);
+    stats->permission_string = get_permission(file_stat.st_mode);
 
     // Enter the number of links of the file
-    stats.links = file_stat.st_nlink;
+    stats->links = file_stat.st_nlink;
 
     // Enter the username of the file owner
     pwd = getpwuid(file_stat.st_uid);
     if (pwd == NULL)
-        snprintf(stats.username, LOGIN_NAME_MAX, "%d", file_stat.st_uid);
+        snprintf(stats->username, LOGIN_NAME_MAX, "%d", file_stat.st_uid);
     else
-        snprintf(stats.username, LOGIN_NAME_MAX, "%s", pwd->pw_name);
+        snprintf(stats->username, LOGIN_NAME_MAX, "%s", pwd->pw_name);
 
     // Enter the group name of the group of users using the file
     grp = getgrgid(file_stat.st_gid);
     if (grp == NULL)
-        snprintf(stats.groupname, LOGIN_NAME_MAX, "%d", file_stat.st_gid);
+        snprintf(stats->groupname, LOGIN_NAME_MAX, "%d", file_stat.st_gid);
     else
-        snprintf(stats.groupname, LOGIN_NAME_MAX, "%s", grp->gr_name);
+        snprintf(stats->groupname, LOGIN_NAME_MAX, "%s", grp->gr_name);
 
     // Enter the size of the file
-    stats.size = file_stat.st_size;
+    stats->size = file_stat.st_size;
 
     // Enter the time of last modification in %b %e %H:%M format
     last_modification = localtime(&file_stat.st_mtim.tv_sec);
-    if (strftime(stats.last_modification, TIMESTAMP_SIZE, "%b %e %H:%M", last_modification) == 0)
-        snprintf(stats.last_modification, TIMESTAMP_SIZE, "???         ");
+    if (strftime(stats->last_modification, TIMESTAMP_SIZE, "%b %e %H:%M", last_modification) == 0)
+        snprintf(stats->last_modification, TIMESTAMP_SIZE, "???         ");
 
     // Enter  the name of the file
-    stats.filename = entry->d_name;
+    stats->filename = entry->d_name;
     return stats;
 }
 

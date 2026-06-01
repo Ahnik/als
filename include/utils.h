@@ -55,7 +55,7 @@ typedef struct {
 } FileStats;
 
 // Function to get the file stats of a file
-FileStats get_file_stats(const char *dir_path, struct dirent *entry);
+FileStats *get_file_stats(const char *dir_path, struct dirent *entry);
 
 // Function to extract read, write and execute permissions of the owner, group and others
 const char *get_permission(mode_t file_mode);

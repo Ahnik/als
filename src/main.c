@@ -16,6 +16,9 @@ int main(int argc, char **argv) {
     struct dirent *entry;
     const char *dir_path = ".";
     int opt;
+    // size_t links = 0;
+    // int max_len[NUM_VARIABLE_FIELDS] = {0};
+    // FileStats *file_stats = NULL;
 
     // Flags used
     bool a_flag = false;
@@ -60,8 +63,25 @@ int main(int argc, char **argv) {
     // Read all entries in the directory stream
     while ((entry = readdir(directory)) != NULL) {
         if (a_flag || (entry->d_name[0] != '.')) {
-            if (l_flag)
-                print_long_list(dir_path, entry, i_flag);
+            if (l_flag) {
+                // Get the file stats
+                FileStats file_stats = get_file_stats(dir_path, entry);
+
+                // Print the inode number if i flag is enabled
+                if (i_flag)
+                    printf("%ld ", file_stats.inode);
+
+                // Print the rest of the fields
+                printf("%s %ld %s %s %ld %s %s\n", 
+                    file_stats.permission_string,
+                    file_stats.links,
+                    file_stats.username,
+                    file_stats.groupname,
+                    file_stats.size,
+                    file_stats.last_modification,
+                    file_stats.filename
+                );
+            }
             else if (strlen(entry->d_name) > 0)
                 printf("%s  ", entry->d_name);
         }

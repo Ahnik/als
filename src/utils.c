@@ -9,14 +9,13 @@
 #include <time.h>
 #include "utils.h"
 
-void print_long_list(const char *dir_path, struct dirent *entry, bool i_flag) {
+FileStats get_file_stats(const char *dir_path, struct dirent *entry) {
+    FileStats stats;                // Struct for storing the final formatted file stats
     const char *pathname;           // Pathname of the directory or file that we are printing
     struct stat file_stat;          // Struct for storing file stats
-    const char *file_permission;    // File permission string
     struct passwd *pwd;             // Struct containing user information of the owner of the file
     struct group *grp;              // Struct containing group information of the group of users using the file
     struct tm *last_modification;   // Struct representing the time of last modification
-    char timestamp[TIMESTAMP_SIZE]; // Timestamp for the time of last modification of the file
 
     // Get the full pathname
     pathname = get_pathname(dir_path, entry->d_name);
@@ -27,43 +26,40 @@ void print_long_list(const char *dir_path, struct dirent *entry, bool i_flag) {
         exit(1);
     }
 
-    // Print the inode of the file if i_flag is set
-    if (i_flag)
-        printf("%ld ", entry->d_ino);
+    // Enter the inode number
+    stats.inode = entry->d_ino;
 
-    // Print the password string
-    file_permission = get_permission(file_stat.st_mode);
-    printf("%s ", file_permission);
+    // Enter the password string
+    stats.permission_string = get_permission(file_stat.st_mode);
 
-    // Print the number of links of the file
-    printf("%ld ", file_stat.st_nlink);
+    // Enter the number of links of the file
+    stats.links = file_stat.st_nlink;
 
-    // Print the username of the file owner
+    // Enter the username of the file owner
     pwd = getpwuid(file_stat.st_uid);
     if (pwd == NULL)
-        printf("%d ", file_stat.st_uid);
+        snprintf(stats.username, LOGIN_NAME_MAX, "%d", file_stat.st_uid);
     else
-        printf("%s ", pwd->pw_name);
+        snprintf(stats.username, LOGIN_NAME_MAX, "%s", pwd->pw_name);
 
-    // Print the group name of the group of users using the file
+    // Enter the group name of the group of users using the file
     grp = getgrgid(file_stat.st_gid);
     if (grp == NULL)
-        printf("%d", file_stat.st_gid);
+        snprintf(stats.groupname, LOGIN_NAME_MAX, "%d", file_stat.st_gid);
     else
-        printf("%s ", grp->gr_name);
+        snprintf(stats.groupname, LOGIN_NAME_MAX, "%s", grp->gr_name);
 
-    // Print the size of the file
-    printf("%ld ", file_stat.st_size);
+    // Enter the size of the file
+    stats.size = file_stat.st_size;
 
-    // Print the time in %b %e %H:%M
+    // Enter the time of last modification in %b %e %H:%M format
     last_modification = localtime(&file_stat.st_mtim.tv_sec);
-    if (strftime(timestamp, TIMESTAMP_SIZE, "%b %e %H:%M", last_modification) != 0)
-        printf("%s ", timestamp);
-    else
-        printf("???          ");
+    if (strftime(stats.last_modification, TIMESTAMP_SIZE, "%b %e %H:%M", last_modification) == 0)
+        snprintf(stats.last_modification, TIMESTAMP_SIZE, "???         ");
 
-    // Print the name of the file
-    printf("%s\n", entry->d_name);
+    // Enter  the name of the file
+    stats.filename = entry->d_name;
+    return stats;
 }
 
 const char *get_pathname(const char *dir_path, const char *filename) {

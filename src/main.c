@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <pwd.h>
 #include <grp.h>
+#include <time.h>
 
 // Maximum length for a complete pathname
 #define PATH_MAX 4096
@@ -17,8 +18,11 @@
 // Size of the permission string
 #define PERMISSION_STRING_SIZE 11
 
+// Size of the timestamp string
+#define TIMESTAMP_SIZE 13
+
 // Function to print the long version of a directory entry
-void print_long_list(const char *pathname);
+void print_long_list(const char *dir_path, const char *d_name);
 
 // Function to extract read, write and execute permissions of the owner, group and others
 const char *get_permission(mode_t file_mode);
@@ -73,7 +77,7 @@ int main(int argc, char **argv) {
     while ((entry = readdir(directory)) != NULL) {
         if (a_flag || (entry->d_name[0] != '.')) {
             if (l_flag)
-                print_long_list(get_pathname(dir_path, entry->d_name));
+                print_long_list(dir_path, entry->d_name);
             else if (strlen(entry->d_name) > 0)
                 printf("%s  ", entry->d_name);
         }
@@ -91,11 +95,17 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-void print_long_list(const char *pathname) {
+void print_long_list(const char *dir_path, const char *d_name) {
+    const char *pathname;           // Pathname of the directory or file that we are printing
     struct stat file_stat;          // Struct for storing file stats
     const char *file_permission;    // File permission string
     struct passwd *pwd;             // Struct containing user information of the owner of the file
     struct group *grp;              // Struct containing group information of the group of users using the file
+    struct tm *last_modification;   // Struct representing the time of last modification
+    char timestamp[TIMESTAMP_SIZE]; // Timestamp for the time of last modification of the file
+
+    // Get the full pathname
+    pathname = get_pathname(dir_path, d_name);
 
     // Obtain the file stats
     if (lstat(pathname, &file_stat) == -1) {
@@ -104,21 +114,39 @@ void print_long_list(const char *pathname) {
     }
 
     /* TODO: Write logic to print the long version of ls of a file entry */
-    // Write the password string
+    // Print the password string
     file_permission = get_permission(file_stat.st_mode);
     printf("%s ", file_permission);
 
-    // Write the number of links of the file
+    // Print the number of links of the file
     printf("%ld ", file_stat.st_nlink);
 
-    // Write the username of the file owner
+    // Print the username of the file owner
     pwd = getpwuid(file_stat.st_uid);
-    printf("%s ", pwd->pw_name);
+    if (pwd == NULL)
+        printf("%d ", file_stat.st_uid);
+    else
+        printf("%s ", pwd->pw_name);
 
-    // Write the group name of the group of users using the file
+    // Print the group name of the group of users using the file
     grp = getgrgid(file_stat.st_gid);
-    printf("%s ", grp->gr_name);
-    printf("\n");
+    if (grp == NULL)
+        printf("%d", file_stat.st_gid);
+    else
+        printf("%s ", grp->gr_name);
+
+    // Print the size of the file
+    printf("%ld ", file_stat.st_size);
+
+    // Print the time in %b %e %H:%M
+    last_modification = localtime(&file_stat.st_mtim.tv_sec);
+    if (strftime(timestamp, TIMESTAMP_SIZE, "%b %e %H:%M", last_modification) != 0)
+        printf("%s ", timestamp);
+    else
+        printf("??? ");
+
+    // Print the name of the file
+    printf("%s\n", d_name);
 }
 
 const char *get_pathname(const char *dir_path, const char *filename) {

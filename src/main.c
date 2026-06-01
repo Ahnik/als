@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include "utils.h"
 
 int main(int argc, char **argv) {
@@ -16,9 +17,9 @@ int main(int argc, char **argv) {
     struct dirent *entry;
     const char *dir_path = ".";
     int opt;
-    // size_t links = 0;
-    // int max_len[NUM_VARIABLE_FIELDS] = {0};
-    // FileStats *file_stats = NULL;
+    size_t links = 0;
+    size_t max_len[NUM_VARIABLE_FIELDS] = {0};
+    FileStats **file_stats = NULL;
 
     // Flags used
     bool a_flag = false;
@@ -64,33 +65,77 @@ int main(int argc, char **argv) {
     while ((entry = readdir(directory)) != NULL) {
         if (a_flag || (entry->d_name[0] != '.')) {
             if (l_flag) {
-                FileStats *file_stats = get_file_stats(dir_path, entry);
-                if (file_stats == NULL) {
-                    perror(argv[0]);
+                links++;
+                // Check whether size of the memory length would cause an overflow
+                if (links > SIZE_MAX / sizeof(FileStats *)) {
+                    fprintf(stderr, "%s: memory size length overflow!\n", argv[0]);
+                    for (size_t i = 0; i < links-1; i++) {
+                        free(file_stats[i]);
+                    }
+                    free(file_stats);
+                    closedir(directory);
                     return 1;
                 }
 
-                // Print the inode number if i flag is enabled
-                if (i_flag)
-                    printf("%ld ", file_stats->inode);
+                // Resize the buffer for storing file metadata
+                file_stats = (FileStats **) realloc(file_stats, links * sizeof(FileStats *));
+                if (file_stats == NULL) {
+                    perror(argv[0]);
+                    closedir(directory);
+                    return 1;
+                }
 
-                // Print the rest of the fields
-                printf("%s %ld %s %s %ld %s %s\n", 
-                    file_stats->permission_string,
-                    file_stats->links,
-                    file_stats->username,
-                    file_stats->groupname,
-                    file_stats->size,
-                    file_stats->last_modification,
-                    file_stats->filename
-                );
+                // Get all the file metadata
+                file_stats[links-1] = get_file_stats(dir_path, entry);
 
-                free(file_stats);
+                // Compare the inode number, links number, username, groupname and size of the file
+                if (no_of_digits(file_stats[links-1]->inode) > max_len[0])
+                    max_len[0] = no_of_digits(file_stats[links-1]->inode);
+                if (no_of_digits(file_stats[links-1]->links) > max_len[1])
+                    max_len[1] = no_of_digits(file_stats[links-1]->links);
+                if (strlen(file_stats[links-1]->username) > max_len[2])
+                    max_len[2] = strlen(file_stats[links-1]->username);
+                if (strlen(file_stats[links-1]->groupname) > max_len[3])
+                    max_len[3] = strlen(file_stats[links-1]->groupname);
+                if (no_of_digits(file_stats[links-1]->size) > max_len[4])
+                    max_len[4] = no_of_digits(file_stats[links-1]->size);
             }
             else if (strlen(entry->d_name) > 0)
                 printf("%s  ", entry->d_name);
         }
     }
+
+    // Print all the data about each file
+    if (l_flag) {
+        for (size_t i = 0; i < links; i++) {
+            if (i_flag) {
+                for (size_t j = no_of_digits(file_stats[i]->inode); j < max_len[0]; j++) printf(" ");
+                printf("%ld ", file_stats[i]->inode);
+            }
+
+            printf("%s ", file_stats[i]->permission_string);
+
+            for (size_t j = no_of_digits(file_stats[i]->links); j < max_len[1]; j++) printf(" ");
+            printf("%ld ", file_stats[i]->links);
+
+            for (size_t j = strlen(file_stats[i]->username); j < max_len[2]; j++) printf(" ");
+            printf("%s ", file_stats[i]->username);
+
+            for (size_t j = strlen(file_stats[i]->groupname); j < max_len[3]; j++) printf(" ");
+            printf("%s ", file_stats[i]->groupname);
+
+            for (size_t j = no_of_digits(file_stats[i]->size); j < max_len[4]; j++) printf(" ");
+            printf("%ld %s %s\n", 
+                file_stats[i]->size,
+                file_stats[i]->last_modification,
+                file_stats[i]->filename
+            );
+
+            free(file_stats[i]);
+        }
+        free(file_stats);
+    }
+
     printf("\n");
 
     // Close the directory stream

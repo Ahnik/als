@@ -63,4 +63,7 @@ const char *get_permission(mode_t file_mode);
 // Function to join the directory name and the filename together to form pathname
 const char *get_pathname(const char *dir_path, const char *filename);
 
+// Function to get the number of digits in an integer
+size_t no_of_digits(unsigned long n);
+
 #endif

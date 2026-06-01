@@ -133,3 +133,13 @@ const char *get_permission(mode_t file_mode) {
 
     return file_permission;
 }
+
+size_t no_of_digits(unsigned long n) {
+    size_t size = 1;
+
+    while (n % 10 != n) {
+        n /= 10;
+        size++;
+    }
+    return size;
+}

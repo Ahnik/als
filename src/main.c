@@ -22,7 +22,7 @@
 #define TIMESTAMP_SIZE 13
 
 // Function to print the long version of a directory entry
-void print_long_list(const char *dir_path, const char *d_name);
+void print_long_list(const char *dir_path, struct dirent *entry, bool i_flag);
 
 // Function to extract read, write and execute permissions of the owner, group and others
 const char *get_permission(mode_t file_mode);
@@ -40,15 +40,19 @@ int main(int argc, char **argv) {
     // Flags used
     bool a_flag = false;
     bool l_flag = false;
+    bool i_flag = false;
 
     // Parse the input flags
-    while ((opt = getopt(argc, argv, "al")) != -1) {
+    while ((opt = getopt(argc, argv, "ali")) != -1) {
         switch (opt) {
             case 'a':
                 a_flag = true;
                 break;
             case 'l':
                 l_flag = true;
+                break;
+            case 'i':
+                i_flag = true;
                 break;
             case '?':
                 return 1;
@@ -77,7 +81,7 @@ int main(int argc, char **argv) {
     while ((entry = readdir(directory)) != NULL) {
         if (a_flag || (entry->d_name[0] != '.')) {
             if (l_flag)
-                print_long_list(dir_path, entry->d_name);
+                print_long_list(dir_path, entry, i_flag);
             else if (strlen(entry->d_name) > 0)
                 printf("%s  ", entry->d_name);
         }
@@ -95,7 +99,7 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-void print_long_list(const char *dir_path, const char *d_name) {
+void print_long_list(const char *dir_path, struct dirent *entry, bool i_flag) {
     const char *pathname;           // Pathname of the directory or file that we are printing
     struct stat file_stat;          // Struct for storing file stats
     const char *file_permission;    // File permission string
@@ -105,7 +109,7 @@ void print_long_list(const char *dir_path, const char *d_name) {
     char timestamp[TIMESTAMP_SIZE]; // Timestamp for the time of last modification of the file
 
     // Get the full pathname
-    pathname = get_pathname(dir_path, d_name);
+    pathname = get_pathname(dir_path, entry->d_name);
 
     // Obtain the file stats
     if (lstat(pathname, &file_stat) == -1) {
@@ -113,7 +117,10 @@ void print_long_list(const char *dir_path, const char *d_name) {
         exit(1);
     }
 
-    /* TODO: Write logic to print the long version of ls of a file entry */
+    // Print the inode of the file if i_flag is set
+    if (i_flag)
+        printf("%ld ", entry->d_ino);
+
     // Print the password string
     file_permission = get_permission(file_stat.st_mode);
     printf("%s ", file_permission);
@@ -143,10 +150,10 @@ void print_long_list(const char *dir_path, const char *d_name) {
     if (strftime(timestamp, TIMESTAMP_SIZE, "%b %e %H:%M", last_modification) != 0)
         printf("%s ", timestamp);
     else
-        printf("??? ");
+        printf("???          ");
 
     // Print the name of the file
-    printf("%s\n", d_name);
+    printf("%s\n", entry->d_name);
 }
 
 const char *get_pathname(const char *dir_path, const char *filename) {

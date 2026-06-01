@@ -1,13 +1,15 @@
 #define _POSIX_C_SOURCE 200809L
 
+#include <sys/stat.h>
+#include <stdlib.h>
 #include <dirent.h>
 #include <errno.h>
 #include <unistd.h>
-#include <sys/stat.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <pwd.h>
+#include <grp.h>
 
 // Maximum length for a complete pathname
 #define PATH_MAX 4096
@@ -90,8 +92,10 @@ int main(int argc, char **argv) {
 }
 
 void print_long_list(const char *pathname) {
-    // Struct for storing file stats
-    struct stat file_stat;
+    struct stat file_stat;          // Struct for storing file stats
+    const char *file_permission;    // File permission string
+    struct passwd *pwd;             // Struct containing user information of the owner of the file
+    struct group *grp;              // Struct containing group information of the group of users using the file
 
     // Obtain the file stats
     if (lstat(pathname, &file_stat) == -1) {
@@ -100,8 +104,21 @@ void print_long_list(const char *pathname) {
     }
 
     /* TODO: Write logic to print the long version of ls of a file entry */
-    const char *file_permission = get_permission(file_stat.st_mode);
-    printf("%s\n", file_permission);
+    // Write the password string
+    file_permission = get_permission(file_stat.st_mode);
+    printf("%s ", file_permission);
+
+    // Write the number of links of the file
+    printf("%ld ", file_stat.st_nlink);
+
+    // Write the username of the file owner
+    pwd = getpwuid(file_stat.st_uid);
+    printf("%s ", pwd->pw_name);
+
+    // Write the group name of the group of users using the file
+    grp = getgrgid(file_stat.st_gid);
+    printf("%s ", grp->gr_name);
+    printf("\n");
 }
 
 const char *get_pathname(const char *dir_path, const char *filename) {

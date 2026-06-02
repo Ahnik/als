@@ -34,7 +34,7 @@
 #define NUM_VARIABLE_FIELDS 5
 
 // Struct to store the fields to be printed in the long list
-typedef struct {
+typedef struct _FileStats {
     __blkcnt_t blocks;                       // number of blocks allocated to this file
     ino_t inode;                             // inode number
     const char *permission_string;           // permission string
@@ -45,6 +45,14 @@ typedef struct {
     char last_modification[TIMESTAMP_SIZE];  // time of last modification
     char filename[NAME_MAX+1];               // name of the file
 } FileStats;
+
+// A macro function to swap two elements in an array
+#define SWAP(type, arr, a, b) \
+    do { \
+        type temp = arr[a]; \
+        arr[a] = arr[b]; \
+        arr[b] = temp; \
+    } while (0)
 
 // Function to get the file stats of a file
 FileStats *get_file_stats(const char *dir_path, struct dirent *entry);
@@ -58,10 +66,10 @@ char *get_pathname(const char *dir_path, const char *filename);
 // Function to get the number of digits in an integer
 size_t no_of_digits(unsigned long n);
 
-// Function to swap two elements in an array of file_stats by index
-void swap(FileStats *arr[], int a, int b);
-
 // Comparator to compare two filestats objects for sorting according to their filenames
-int compare(const void *a, const void *b);
+int compare_file_stats(const void *a, const void *b);
+
+// Comparator to compare two filenames for sorting
+int compare_filenames(const void *a, const void *b);
 
 #endif

@@ -25,6 +25,7 @@ int main(int argc, char **argv) {
     size_t total_blocks = 0;
     size_t max_len[NUM_VARIABLE_FIELDS] = {0};
     FileStats **file_stats = NULL;
+    char **filenames = NULL;
 
     // Flags used
     bool a_flag = false;
@@ -122,19 +123,50 @@ int main(int argc, char **argv) {
                 if (a_flag) {
                     // If the entry name is '.', then put it at the top
                     if (size > 1 && (strncmp(file_stats[size-1]->filename, ".", sizeof(".")) == 0))
-                        swap(file_stats, size-1, 0);
+                        SWAP(FileStats *, file_stats, size-1, 0);
 
-                    // If the array is of size 2 and the first entry had name "..", then swap the first two entries
+                    // If the array is of size 2 and the first entry had name "..", then swap_file_stats the first two entries
                     if (size == 2 && (strncmp(file_stats[0]->filename, "..", sizeof("..")) == 0))
-                        swap(file_stats, 0, 1);
+                        SWAP(FileStats *, file_stats, 0, 1);
 
                     // If the array is of size greater than 2 and the entry name is "..", place the entry at the second place in the array
                     if (size > 2 && (strncmp(file_stats[size-1]->filename, "..", sizeof("..")) == 0))
-                        swap(file_stats, size-1, 1);
+                        SWAP(FileStats *, file_stats, size-1, 1);
                 }
             }
-            else if (strlen(entry->d_name) > 0)
-                printf("%s  ", entry->d_name);
+            else if (strlen(entry->d_name) > 0) {
+                size++;
+                // Check whether size of the memory length would cause an overflow
+                if (size > SIZE_MAX / sizeof(char *)) {
+                    fprintf(stderr, "%s: memory size length overflow!\n", argv[0]);
+                    free(filenames);
+                    closedir(directory);
+                    return 1;
+                }
+
+                // Resize the buffer for storing filenames
+                filenames = (char **) realloc(filenames, size * sizeof(char *));
+                if (filenames == NULL) {
+                    perror(argv[0]);
+                    closedir(directory);
+                    return 1;
+                }
+
+                // Store the filename
+                filenames[size-1] = entry->d_name;
+
+                // Keep the '.' and '..' at first
+                if (a_flag) {
+                    if (size > 1 && (strncmp(filenames[size-1], ".", sizeof(".")) == 0))
+                        SWAP(char *, filenames, size-1, 0);
+
+                    if (size == 2 && (strncmp(filenames[0], "..", sizeof("..")) == 0))
+                        SWAP(char *, filenames, 0, 1);
+
+                    if (size > 2 && (strncmp(filenames[size-1], "..", sizeof("..")) == 0))
+                        SWAP(char *, filenames, size-1, 1);
+                }
+            }
         }
     }
 
@@ -142,9 +174,9 @@ int main(int argc, char **argv) {
     if (l_flag) {
         // Sort the array of filestats by their filenames
         if (a_flag) {
-            if (size > 2) qsort(&file_stats[2], size-2, sizeof(FileStats *), &compare);
+            if (size > 2) qsort(&file_stats[2], size-2, sizeof(FileStats *), &compare_file_stats);
         } else
-            qsort(file_stats, size, sizeof(FileStats *), &compare);
+            qsort(file_stats, size, sizeof(FileStats *), &compare_file_stats);
 
         // Print the total number of blocks allocated to all files in the directory
         total_blocks = total_blocks >> 1;       // ls command gives 1024-byte blocks while struct stat reports 512-byte blocks
@@ -177,9 +209,20 @@ int main(int argc, char **argv) {
             free(file_stats[i]);
         }
         free(file_stats);
-    }
+    } else {
+        // Sort the filenames
+        if (a_flag) {
+            if (size > 2) qsort(&filenames[2], size-2, sizeof(char *), &compare_filenames);
+        } else
+            qsort(filenames, size, sizeof(char *), &compare_filenames);
 
-    printf("\n");
+        // Print the sorted filenames
+        for (size_t i = 0; i < size; i++) {
+            printf("%s  ", filenames[i]);
+        }
+        printf("\n");
+        free(filenames);
+    }
 
     // Close the directory stream
     closedir(directory);

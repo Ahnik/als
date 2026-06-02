@@ -146,3 +146,9 @@ size_t no_of_digits(unsigned long n) {
     }
     return size;
 }
+
+void swap(FileStats *arr[], int a, int b) {
+    FileStats *temp = arr[a];
+    arr[a] = arr[b];
+    arr[b] = temp;
+}

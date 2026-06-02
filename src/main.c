@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
     struct dirent *entry;
     const char *dir_path = ".";
     int opt;
-    size_t links = 0;
+    size_t size = 0;
     size_t total_blocks = 0;
     size_t max_len[NUM_VARIABLE_FIELDS] = {0};
     FileStats **file_stats = NULL;
@@ -66,11 +66,11 @@ int main(int argc, char **argv) {
     while ((entry = readdir(directory)) != NULL) {
         if (a_flag || (entry->d_name[0] != '.')) {
             if (l_flag) {
-                links++;
+                size++;
                 // Check whether size of the memory length would cause an overflow
-                if (links > SIZE_MAX / sizeof(FileStats *)) {
+                if (size > SIZE_MAX / sizeof(FileStats *)) {
                     fprintf(stderr, "%s: memory size length overflow!\n", argv[0]);
-                    for (size_t i = 0; i < links-1; i++) {
+                    for (size_t i = 0; i < size-1; i++) {
                         free(file_stats[i]);
                     }
                     free(file_stats);
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
                 }
 
                 // Resize the buffer for storing file metadata
-                file_stats = (FileStats **) realloc(file_stats, links * sizeof(FileStats *));
+                file_stats = (FileStats **) realloc(file_stats, size * sizeof(FileStats *));
                 if (file_stats == NULL) {
                     perror(argv[0]);
                     closedir(directory);
@@ -87,22 +87,36 @@ int main(int argc, char **argv) {
                 }
 
                 // Get all the file metadata
-                file_stats[links-1] = get_file_stats(dir_path, entry);
+                file_stats[size-1] = get_file_stats(dir_path, entry);
 
                 // Add up the number of blocks allocated
-                total_blocks += file_stats[links-1]->blocks;
+                total_blocks += file_stats[size-1]->blocks;
 
                 // Compare the inode number, links number, username, groupname and size of the file
-                if (no_of_digits(file_stats[links-1]->inode) > max_len[0])
-                    max_len[0] = no_of_digits(file_stats[links-1]->inode);
-                if (no_of_digits(file_stats[links-1]->links) > max_len[1])
-                    max_len[1] = no_of_digits(file_stats[links-1]->links);
-                if (strlen(file_stats[links-1]->username) > max_len[2])
-                    max_len[2] = strlen(file_stats[links-1]->username);
-                if (strlen(file_stats[links-1]->groupname) > max_len[3])
-                    max_len[3] = strlen(file_stats[links-1]->groupname);
-                if (no_of_digits(file_stats[links-1]->size) > max_len[4])
-                    max_len[4] = no_of_digits(file_stats[links-1]->size);
+                if (no_of_digits(file_stats[size-1]->inode) > max_len[0])
+                    max_len[0] = no_of_digits(file_stats[size-1]->inode);
+                if (no_of_digits(file_stats[size-1]->links) > max_len[1])
+                    max_len[1] = no_of_digits(file_stats[size-1]->links);
+                if (strlen(file_stats[size-1]->username) > max_len[2])
+                    max_len[2] = strlen(file_stats[size-1]->username);
+                if (strlen(file_stats[size-1]->groupname) > max_len[3])
+                    max_len[3] = strlen(file_stats[size-1]->groupname);
+                if (no_of_digits(file_stats[size-1]->size) > max_len[4])
+                    max_len[4] = no_of_digits(file_stats[size-1]->size);
+
+                if (a_flag) {
+                    // If the entry name is '.', then put it at the top
+                    if (size > 1 && (strncmp(file_stats[size-1]->filename, ".", sizeof(".")) == 0))
+                        swap(file_stats, size-1, 0);
+
+                    // If the array is of size 2 and the first entry had name "..", then swap the first two entries
+                    if (size == 2 && (strncmp(file_stats[0]->filename, "..", sizeof("..")) == 0))
+                        swap(file_stats, 0, 1);
+
+                    // If the array is of size greater than 2 and the entry name is "..", place the entry at the second place in the array
+                    if (size > 2 && (strncmp(file_stats[size-1]->filename, "..", sizeof("..")) == 0))
+                        swap(file_stats, size-1, 1);
+                }
             }
             else if (strlen(entry->d_name) > 0)
                 printf("%s  ", entry->d_name);
@@ -115,7 +129,7 @@ int main(int argc, char **argv) {
         total_blocks = total_blocks >> 1;       // ls command gives 1024-byte blocks while struct stat reports 512-byte blocks
         printf("total %ld\n", total_blocks);
 
-        for (size_t i = 0; i < links; i++) {
+        for (size_t i = 0; i < size; i++) {
             if (i_flag) {
                 for (size_t j = no_of_digits(file_stats[i]->inode); j < max_len[0]; j++) printf(" ");
                 printf("%ld ", file_stats[i]->inode);

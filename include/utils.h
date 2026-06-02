@@ -67,4 +67,7 @@ const char *get_pathname(const char *dir_path, const char *filename);
 // Function to get the number of digits in an integer
 size_t no_of_digits(unsigned long n);
 
+// Function to swap two elements in an array of file_stats by index
+void swap(FileStats *arr[], int a, int b);
+
 #endif

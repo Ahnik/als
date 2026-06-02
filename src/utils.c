@@ -65,7 +65,7 @@ FileStats *get_file_stats(const char *dir_path, struct dirent *entry) {
         snprintf(stats->last_modification, TIMESTAMP_SIZE, "???         ");
 
     // Enter  the name of the file
-    stats->filename = entry->d_name;
+    snprintf(stats->filename, NAME_MAX+1, "%s", entry->d_name);
     return stats;
 }
 
@@ -151,4 +151,17 @@ void swap(FileStats *arr[], int a, int b) {
     FileStats *temp = arr[a];
     arr[a] = arr[b];
     arr[b] = temp;
+}
+
+int compare(const void *a, const void *b) {
+    if (a == NULL) return -1;
+    if (b == NULL) return 1;
+    const FileStats **f1 = (const FileStats **) a;
+    const FileStats **f2 = (const FileStats **) b;
+    const char *s1 = &((*f1)->filename[0]);
+    const char *s2 = &((*f2)->filename[0]);
+    if (s1[0] == '.') s1 = &s1[1];
+    if (s2[0] == '.') s2 = &s2[1];
+
+    return strcoll(s1, s2);
 }

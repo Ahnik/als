@@ -52,7 +52,7 @@ typedef struct {
     char groupname[LOGIN_NAME_MAX];          // file group owner name
     off_t size;                              // file size
     char last_modification[TIMESTAMP_SIZE];  // time of last modification
-    const char *filename;                    // name of the file
+    char filename[NAME_MAX+1];                 // name of the file
 } FileStats;
 
 // Function to get the file stats of a file
@@ -69,5 +69,8 @@ size_t no_of_digits(unsigned long n);
 
 // Function to swap two elements in an array of file_stats by index
 void swap(FileStats *arr[], int a, int b);
+
+// Comparator to compare two filestats objects for sorting according to their filenames
+int compare(const void *a, const void *b);
 
 #endif

@@ -9,9 +9,13 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <locale.h>
 #include "utils.h"
 
 int main(int argc, char **argv) {
+    // Use the locale of the user's program
+    setlocale(LC_COLLATE, "");
+
     // Variables used
     DIR *directory;
     struct dirent *entry;
@@ -125,6 +129,12 @@ int main(int argc, char **argv) {
 
     // Print all the data about each file
     if (l_flag) {
+        // Sort the array of filestats by their filenames
+        if (a_flag) {
+            if (size > 2) qsort(&file_stats[2], size-2, sizeof(FileStats *), &compare);
+        } else
+            qsort(file_stats, size, sizeof(FileStats *), &compare);
+
         // Print the total number of blocks allocated to all files in the directory
         total_blocks = total_blocks >> 1;       // ls command gives 1024-byte blocks while struct stat reports 512-byte blocks
         printf("total %ld\n", total_blocks);

@@ -93,6 +93,17 @@ int main(int argc, char **argv) {
                 // Get all the file metadata
                 file_stats[size-1] = get_file_stats(dir_path, entry);
 
+                // If there has been any problem in fetching file stats, exit
+                if (file_stats[size-1] == NULL) {
+                    perror(argv[0]);
+                    for (size_t i = 0; i < size-1; i++) {
+                        free(file_stats[i]);
+                    }
+                    free(file_stats);
+                    closedir(directory);
+                    return 1;
+                }
+
                 // Add up the number of blocks allocated
                 total_blocks += file_stats[size-1]->blocks;
 

@@ -11,7 +11,7 @@
 
 FileStats *get_file_stats(const char *dir_path, struct dirent *entry) {
     FileStats *stats;               // Struct for storing the final formatted file stats
-    const char *pathname;           // Pathname of the directory or file that we are printing
+    char *pathname;                 // Pathname of the directory or file that we are printing
     struct stat file_stat;          // Struct for storing file stats
     struct passwd *pwd;             // Struct containing user information of the owner of the file
     struct group *grp;              // Struct containing group information of the group of users using the file
@@ -24,11 +24,14 @@ FileStats *get_file_stats(const char *dir_path, struct dirent *entry) {
     // Get the full pathname
     pathname = get_pathname(dir_path, entry->d_name);
 
+    // If the pathname is NULL, return NULL
+    if (pathname == NULL) return NULL;
+
     // Obtain the file stats
-    if (lstat(pathname, &file_stat) == -1) {
-        perror("Error while obtaining file stats");
-        exit(1);
-    }
+    if (lstat(pathname, &file_stat) == -1) return NULL;
+
+    // Free the dynamic buffer for storing the pathname
+    free(pathname);
 
     // Enter the number of blocks allocated
     stats->blocks = file_stat.st_blocks;
@@ -69,9 +72,11 @@ FileStats *get_file_stats(const char *dir_path, struct dirent *entry) {
     return stats;
 }
 
-const char *get_pathname(const char *dir_path, const char *filename) {
+char *get_pathname(const char *dir_path, const char *filename) {
     // Make the buffer static so that the memory persists for the lifetime of the program
-    static char pathname[PATH_MAX];
+    // static char pathname[PATH_MAX];
+    char *pathname = (char *) calloc(strlen(dir_path) + strlen(filename) + 2, sizeof(char));
+    if (pathname == NULL) return NULL;
     snprintf(pathname, PATH_MAX, "%s", dir_path);
 
     // Add the '/' if there is none

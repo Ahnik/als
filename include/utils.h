@@ -6,15 +6,6 @@
 #include <sys/stat.h>
 #include <limits.h>
 
-// Maximum length for a complete pathname
-#ifndef PATH_MAX
-#ifdef _POSIX_PATH_MAX
-    #define PATH_MAX (_POSIX_PATH_MAX)
-#else
-    #define PATH_MAX 4096
-#endif
-#endif
-
 // Maximum length for a filename
 #ifndef NAME_MAX
 #ifdef _POSIX_NAME_MAX
@@ -52,7 +43,7 @@ typedef struct {
     char groupname[LOGIN_NAME_MAX];          // file group owner name
     off_t size;                              // file size
     char last_modification[TIMESTAMP_SIZE];  // time of last modification
-    char filename[NAME_MAX+1];                 // name of the file
+    char filename[NAME_MAX+1];               // name of the file
 } FileStats;
 
 // Function to get the file stats of a file
@@ -62,7 +53,7 @@ FileStats *get_file_stats(const char *dir_path, struct dirent *entry);
 const char *get_permission(mode_t file_mode);
 
 // Function to join the directory name and the filename together to form pathname
-const char *get_pathname(const char *dir_path, const char *filename);
+char *get_pathname(const char *dir_path, const char *filename);
 
 // Function to get the number of digits in an integer
 size_t no_of_digits(unsigned long n);

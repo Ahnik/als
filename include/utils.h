@@ -44,6 +44,7 @@
 
 // Struct to store the fields to be printed in the long list
 typedef struct {
+    __blkcnt_t blocks;                       // number of blocks allocated to this file
     ino_t inode;                             // inode number
     const char *permission_string;           // permission string
     nlink_t links;                           // number of links

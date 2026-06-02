@@ -18,6 +18,7 @@ int main(int argc, char **argv) {
     const char *dir_path = ".";
     int opt;
     size_t links = 0;
+    size_t total_blocks = 0;
     size_t max_len[NUM_VARIABLE_FIELDS] = {0};
     FileStats **file_stats = NULL;
 
@@ -88,6 +89,9 @@ int main(int argc, char **argv) {
                 // Get all the file metadata
                 file_stats[links-1] = get_file_stats(dir_path, entry);
 
+                // Add up the number of blocks allocated
+                total_blocks += file_stats[links-1]->blocks;
+
                 // Compare the inode number, links number, username, groupname and size of the file
                 if (no_of_digits(file_stats[links-1]->inode) > max_len[0])
                     max_len[0] = no_of_digits(file_stats[links-1]->inode);
@@ -107,6 +111,10 @@ int main(int argc, char **argv) {
 
     // Print all the data about each file
     if (l_flag) {
+        // Print the total number of blocks allocated to all files in the directory
+        total_blocks = total_blocks >> 1;       // ls command gives 1024-byte blocks while struct stat reports 512-byte blocks
+        printf("total %ld\n", total_blocks);
+
         for (size_t i = 0; i < links; i++) {
             if (i_flag) {
                 for (size_t j = no_of_digits(file_stats[i]->inode); j < max_len[0]; j++) printf(" ");

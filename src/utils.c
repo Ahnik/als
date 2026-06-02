@@ -30,6 +30,9 @@ FileStats *get_file_stats(const char *dir_path, struct dirent *entry) {
         exit(1);
     }
 
+    // Enter the number of blocks allocated
+    stats->blocks = file_stat.st_blocks;
+
     // Enter the inode number
     stats->inode = entry->d_ino;
 

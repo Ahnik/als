@@ -165,11 +165,13 @@ int compare_file_stats(const void *a, const void *b) {
     return strcoll(s1, s2);
 }
 
-int compare_filenames(const void *a, const void *b) {
+int compare_file_entries(const void *a, const void *b) {
     if (a == NULL) return -1;
     if (b == NULL) return 1;
-    const char *s1 = (* (const char **) a);
-    const char *s2 = (* (const char **) b);
+    const FileEntry **f1 = (const FileEntry **) a;
+    const FileEntry **f2 = (const FileEntry **) b;
+    const char *s1 = &((*f1)->filename[0]);
+    const char *s2 = &((*f2)->filename[0]);
     if (s1[0] == '.') s1 = &s1[1];
     if (s2[0] == '.') s2 = &s2[1];
 

@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
     size_t total_blocks = 0;
     size_t max_len[NUM_VARIABLE_FIELDS] = {0};
     FileStats **file_stats = NULL;
-    char **filenames = NULL;
+    FileEntry **file_entries = NULL;
 
     // Flags used
     bool a_flag = false;
@@ -137,34 +137,49 @@ int main(int argc, char **argv) {
             else if (strlen(entry->d_name) > 0) {
                 size++;
                 // Check whether size of the memory length would cause an overflow
-                if (size > SIZE_MAX / sizeof(char *)) {
+                if (size > SIZE_MAX / sizeof(FileEntry *)) {
                     fprintf(stderr, "%s: memory size length overflow!\n", argv[0]);
-                    free(filenames);
+                    for (size_t i = 0; i < size-1; i++) {
+                        free(file_entries[i]);
+                    }
+                    free(file_entries);
                     closedir(directory);
                     return 1;
                 }
 
-                // Resize the buffer for storing filenames
-                filenames = (char **) realloc(filenames, size * sizeof(char *));
-                if (filenames == NULL) {
+                // Resize the buffer for storing file_entries
+                file_entries = (FileEntry **) realloc(file_entries, size * sizeof(FileEntry *));
+                if (file_entries == NULL) {
                     perror(argv[0]);
                     closedir(directory);
                     return 1;
                 }
 
-                // Store the filename
-                filenames[size-1] = entry->d_name;
+                // Allocate memory for the file entry
+                file_entries[size-1] = (FileEntry *) malloc(sizeof(FileEntry));
+                if (file_entries[size-1] == NULL) {
+                    for (size_t i = 0; i < size-1; i++) {
+                        free(file_entries[i]);
+                    }
+                    free(file_entries);
+                    closedir(directory);
+                    return 1;
+                }
+
+                // Store the filename and inode number
+                snprintf(file_entries[size-1]->filename, NAME_MAX+1, "%s", entry->d_name);
+                file_entries[size-1]->inode = entry->d_ino;
 
                 // Keep the '.' and '..' at first
                 if (a_flag) {
-                    if (size > 1 && (strncmp(filenames[size-1], ".", sizeof(".")) == 0))
-                        SWAP(char *, filenames, size-1, 0);
+                    if (size > 1 && (strncmp(file_entries[size-1]->filename, ".", sizeof(".")) == 0))
+                        SWAP(FileEntry *, file_entries, size-1, 0);
 
-                    if (size == 2 && (strncmp(filenames[0], "..", sizeof("..")) == 0))
-                        SWAP(char *, filenames, 0, 1);
+                    if (size == 2 && (strncmp(file_entries[0]->filename, "..", sizeof("..")) == 0))
+                        SWAP(FileEntry *, file_entries, 0, 1);
 
-                    if (size > 2 && (strncmp(filenames[size-1], "..", sizeof("..")) == 0))
-                        SWAP(char *, filenames, size-1, 1);
+                    if (size > 2 && (strncmp(file_entries[size-1]->filename, "..", sizeof("..")) == 0))
+                        SWAP(FileEntry *, file_entries, size-1, 1);
                 }
             }
         }
@@ -172,7 +187,7 @@ int main(int argc, char **argv) {
 
     // Print all the data about each file
     if (l_flag) {
-        // Sort the array of filestats by their filenames
+        // Sort the array of filestats by their file_entries
         if (a_flag) {
             if (size > 2) qsort(&file_stats[2], size-2, sizeof(FileStats *), &compare_file_stats);
         } else
@@ -210,18 +225,20 @@ int main(int argc, char **argv) {
         }
         free(file_stats);
     } else {
-        // Sort the filenames
+        // Sort the file_entries
         if (a_flag) {
-            if (size > 2) qsort(&filenames[2], size-2, sizeof(char *), &compare_filenames);
+            if (size > 2) qsort(&file_entries[2], size-2, sizeof(char *), &compare_file_entries);
         } else
-            qsort(filenames, size, sizeof(char *), &compare_filenames);
+            qsort(file_entries, size, sizeof(char *), &compare_file_entries);
 
-        // Print the sorted filenames
+        // Print the sorted file_entries
         for (size_t i = 0; i < size; i++) {
-            printf("%s  ", filenames[i]);
+            if (i_flag)
+                printf("%ld ", file_entries[i]->inode);
+            printf("%s  ", file_entries[i]->filename);
         }
         printf("\n");
-        free(filenames);
+        free(file_entries);
     }
 
     // Close the directory stream

@@ -9,7 +9,7 @@
 #include <time.h>
 #include "utils.h"
 
-FileStats *get_file_stats(const char *dir_path, struct dirent *entry) {
+FileStats *get_file_stats(const char *dir_path, struct dirent *entry, bool l_flag) {
     FileStats *stats;               // Struct for storing the final formatted file stats
     char *pathname;                 // Pathname of the directory or file that we are printing
     struct stat file_stat;          // Struct for storing file stats
@@ -20,6 +20,15 @@ FileStats *get_file_stats(const char *dir_path, struct dirent *entry) {
     // Allocate memory for the stats struct
     stats = (FileStats *) malloc(sizeof(FileStats));
     if (stats == NULL) return NULL;
+
+    // Enter the inode number
+    stats->inode = entry->d_ino;
+
+    // Enter  the name of the file
+    snprintf(stats->filename, NAME_MAX+1, "%s", entry->d_name);
+
+    // If l flag is not set, then we'll just need the inode number and filename
+    if (l_flag == false) return stats;
 
     // Get the full pathname
     pathname = get_pathname(dir_path, entry->d_name);
@@ -35,9 +44,6 @@ FileStats *get_file_stats(const char *dir_path, struct dirent *entry) {
 
     // Enter the number of blocks allocated
     stats->blocks = file_stat.st_blocks;
-
-    // Enter the inode number
-    stats->inode = entry->d_ino;
 
     // Enter the password string
     stats->permission_string = get_permission(file_stat.st_mode);
@@ -67,8 +73,6 @@ FileStats *get_file_stats(const char *dir_path, struct dirent *entry) {
     if (strftime(stats->last_modification, TIMESTAMP_SIZE, "%b %e %H:%M", last_modification) == 0)
         snprintf(stats->last_modification, TIMESTAMP_SIZE, "???         ");
 
-    // Enter  the name of the file
-    snprintf(stats->filename, NAME_MAX+1, "%s", entry->d_name);
     return stats;
 }
 
@@ -157,19 +161,6 @@ int compare_file_stats(const void *a, const void *b) {
     if (b == NULL) return 1;
     const FileStats **f1 = (const FileStats **) a;
     const FileStats **f2 = (const FileStats **) b;
-    const char *s1 = &((*f1)->filename[0]);
-    const char *s2 = &((*f2)->filename[0]);
-    if (s1[0] == '.') s1 = &s1[1];
-    if (s2[0] == '.') s2 = &s2[1];
-
-    return strcoll(s1, s2);
-}
-
-int compare_file_entries(const void *a, const void *b) {
-    if (a == NULL) return -1;
-    if (b == NULL) return 1;
-    const FileEntry **f1 = (const FileEntry **) a;
-    const FileEntry **f2 = (const FileEntry **) b;
     const char *s1 = &((*f1)->filename[0]);
     const char *s2 = &((*f2)->filename[0]);
     if (s1[0] == '.') s1 = &s1[1];

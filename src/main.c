@@ -25,7 +25,6 @@ int main(int argc, char **argv) {
     size_t total_blocks = 0;
     size_t max_len[NUM_VARIABLE_FIELDS] = {0};
     FileStats **file_stats = NULL;
-    FileEntry **file_entries = NULL;
 
     // Flags used
     bool a_flag = false;
@@ -70,44 +69,37 @@ int main(int argc, char **argv) {
     // Read all entries in the directory stream
     while ((entry = readdir(directory)) != NULL) {
         if (a_flag || (entry->d_name[0] != '.')) {
+            size++;
+            // Check whether size of the memory length would cause an overflow
+            if (size > SIZE_MAX / sizeof(FileStats *)) {
+                fprintf(stderr, "%s: memory size length overflow!\n", argv[0]);
+                for (size_t i = 0; i < size-1; i++) free(file_stats[i]);
+                free(file_stats);
+                closedir(directory);
+                return 1;
+            }
+
+            // Resize the buffer for storing file metadata
+            file_stats = (FileStats **) realloc(file_stats, size * sizeof(FileStats *));
+            if (file_stats == NULL) {
+                perror(argv[0]);
+                closedir(directory);
+                return 1;
+            }
+
+            // Get all the file metadata
+            file_stats[size-1] = get_file_stats(dir_path, entry, l_flag);
+
+            // If there has been any problem in fetching file stats, exit
+            if (file_stats[size-1] == NULL) {
+                perror(argv[0]);
+                for (size_t i = 0; i < size-1; i++) free(file_stats[i]);
+                free(file_stats);
+                closedir(directory);
+                return 1;
+            }
+
             if (l_flag) {
-                size++;
-                // Check whether size of the memory length would cause an overflow
-                if (size > SIZE_MAX / sizeof(FileStats *)) {
-                    fprintf(stderr, "%s: memory size length overflow!\n", argv[0]);
-                    for (size_t i = 0; i < size-1; i++) {
-                        free(file_stats[i]);
-                    }
-                    free(file_stats);
-                    closedir(directory);
-                    return 1;
-                }
-
-                // Resize the buffer for storing file metadata
-                file_stats = (FileStats **) realloc(file_stats, size * sizeof(FileStats *));
-                if (file_stats == NULL) {
-                    perror(argv[0]);
-                    closedir(directory);
-                    return 1;
-                }
-
-                // Get all the file metadata
-                file_stats[size-1] = get_file_stats(dir_path, entry);
-
-                // If there has been any problem in fetching file stats, exit
-                if (file_stats[size-1] == NULL) {
-                    perror(argv[0]);
-                    for (size_t i = 0; i < size-1; i++) {
-                        free(file_stats[i]);
-                    }
-                    free(file_stats);
-                    closedir(directory);
-                    return 1;
-                }
-
-                // Add up the number of blocks allocated
-                total_blocks += file_stats[size-1]->blocks;
-
                 // Compare the inode number, links number, username, groupname and size of the file
                 if (no_of_digits(file_stats[size-1]->inode) > max_len[0])
                     max_len[0] = no_of_digits(file_stats[size-1]->inode);
@@ -120,79 +112,32 @@ int main(int argc, char **argv) {
                 if (no_of_digits(file_stats[size-1]->size) > max_len[4])
                     max_len[4] = no_of_digits(file_stats[size-1]->size);
 
-                if (a_flag) {
-                    // If the entry name is '.', then put it at the top
-                    if (size > 1 && (strncmp(file_stats[size-1]->filename, ".", sizeof(".")) == 0))
-                        SWAP(FileStats *, file_stats, size-1, 0);
-
-                    // If the array is of size 2 and the first entry had name "..", then swap_file_stats the first two entries
-                    if (size == 2 && (strncmp(file_stats[0]->filename, "..", sizeof("..")) == 0))
-                        SWAP(FileStats *, file_stats, 0, 1);
-
-                    // If the array is of size greater than 2 and the entry name is "..", place the entry at the second place in the array
-                    if (size > 2 && (strncmp(file_stats[size-1]->filename, "..", sizeof("..")) == 0))
-                        SWAP(FileStats *, file_stats, size-1, 1);
-                }
+                // Add up the number of blocks allocated
+                total_blocks += file_stats[size-1]->blocks;
             }
-            else if (strlen(entry->d_name) > 0) {
-                size++;
-                // Check whether size of the memory length would cause an overflow
-                if (size > SIZE_MAX / sizeof(FileEntry *)) {
-                    fprintf(stderr, "%s: memory size length overflow!\n", argv[0]);
-                    for (size_t i = 0; i < size-1; i++) {
-                        free(file_entries[i]);
-                    }
-                    free(file_entries);
-                    closedir(directory);
-                    return 1;
-                }
 
-                // Resize the buffer for storing file_entries
-                file_entries = (FileEntry **) realloc(file_entries, size * sizeof(FileEntry *));
-                if (file_entries == NULL) {
-                    perror(argv[0]);
-                    closedir(directory);
-                    return 1;
-                }
-
-                // Allocate memory for the file entry
-                file_entries[size-1] = (FileEntry *) malloc(sizeof(FileEntry));
-                if (file_entries[size-1] == NULL) {
-                    for (size_t i = 0; i < size-1; i++) {
-                        free(file_entries[i]);
-                    }
-                    free(file_entries);
-                    closedir(directory);
-                    return 1;
-                }
-
-                // Store the filename and inode number
-                snprintf(file_entries[size-1]->filename, NAME_MAX+1, "%s", entry->d_name);
-                file_entries[size-1]->inode = entry->d_ino;
-
-                // Keep the '.' and '..' at first
-                if (a_flag) {
-                    if (size > 1 && (strncmp(file_entries[size-1]->filename, ".", sizeof(".")) == 0))
-                        SWAP(FileEntry *, file_entries, size-1, 0);
-
-                    if (size == 2 && (strncmp(file_entries[0]->filename, "..", sizeof("..")) == 0))
-                        SWAP(FileEntry *, file_entries, 0, 1);
-
-                    if (size > 2 && (strncmp(file_entries[size-1]->filename, "..", sizeof("..")) == 0))
-                        SWAP(FileEntry *, file_entries, size-1, 1);
-                }
+            if (a_flag) {
+                // If the entry name is '.', then put it at the top
+                if (size > 1 && (strncmp(file_stats[size-1]->filename, ".", sizeof(".")) == 0))
+                    SWAP(FileStats *, file_stats, size-1, 0);
+                // If the array is of size 2 and the first entry had name "..", then swap_file_stats the first two entries
+                if (size == 2 && (strncmp(file_stats[0]->filename, "..", sizeof("..")) == 0))
+                    SWAP(FileStats *, file_stats, 0, 1);
+                // If the array is of size greater than 2 and the entry name is "..", place the entry at the second place in the array
+                if (size > 2 && (strncmp(file_stats[size-1]->filename, "..", sizeof("..")) == 0))
+                    SWAP(FileStats *, file_stats, size-1, 1);
             }
         }
     }
 
+    // Sort the array of filestats by their file_entries
+    if (a_flag) {
+        if (size > 2) qsort(&file_stats[2], size-2, sizeof(FileStats *), &compare_file_stats);
+    } else
+        qsort(file_stats, size, sizeof(FileStats *), &compare_file_stats);
+
     // Print all the data about each file
     if (l_flag) {
-        // Sort the array of filestats by their file_entries
-        if (a_flag) {
-            if (size > 2) qsort(&file_stats[2], size-2, sizeof(FileStats *), &compare_file_stats);
-        } else
-            qsort(file_stats, size, sizeof(FileStats *), &compare_file_stats);
-
         // Print the total number of blocks allocated to all files in the directory
         total_blocks = total_blocks >> 1;       // ls command gives 1024-byte blocks while struct stat reports 512-byte blocks
         printf("total %ld\n", total_blocks);
@@ -225,20 +170,15 @@ int main(int argc, char **argv) {
         }
         free(file_stats);
     } else {
-        // Sort the file_entries
-        if (a_flag) {
-            if (size > 2) qsort(&file_entries[2], size-2, sizeof(char *), &compare_file_entries);
-        } else
-            qsort(file_entries, size, sizeof(char *), &compare_file_entries);
-
         // Print the sorted file_entries
         for (size_t i = 0; i < size; i++) {
             if (i_flag)
-                printf("%ld ", file_entries[i]->inode);
-            printf("%s  ", file_entries[i]->filename);
+                printf("%ld ", file_stats[i]->inode);
+            printf("%s  ", file_stats[i]->filename);
+            free(file_stats[i]);
         }
         printf("\n");
-        free(file_entries);
+        free(file_stats);
     }
 
     // Close the directory stream

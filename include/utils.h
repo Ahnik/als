@@ -46,12 +46,6 @@ typedef struct _FileStats {
     char filename[NAME_MAX+1];               // name of the file
 } FileStats;
 
-// Struct to store just the filename and inode number of a file
-typedef struct _FileEntry {
-    ino_t inode;                // inode number
-    char filename[NAME_MAX+1];  // name of the file
-} FileEntry;
-
 // A macro function to swap two elements in an array
 #define SWAP(type, arr, a, b) \
     do { \
@@ -61,7 +55,7 @@ typedef struct _FileEntry {
     } while (0)
 
 // Function to get the file stats of a file
-FileStats *get_file_stats(const char *dir_path, struct dirent *entry);
+FileStats *get_file_stats(const char *dir_path, struct dirent *entry, bool l_flag);
 
 // Function to extract read, write and execute permissions of the owner, group and others
 const char *get_permission(mode_t file_mode);
@@ -74,8 +68,5 @@ size_t no_of_digits(unsigned long n);
 
 // Comparator to compare two filestats objects for sorting according to their filenames
 int compare_file_stats(const void *a, const void *b);
-
-// Comparator to compare two filenames for sorting
-int compare_file_entries(const void *a, const void *b);
 
 #endif

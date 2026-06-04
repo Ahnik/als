@@ -160,11 +160,23 @@ int main(int argc, char **argv) {
             printf("%s ", file_stats[i]->groupname);
 
             for (size_t j = no_of_digits(file_stats[i]->size); j < max_len[4]; j++) printf(" ");
-            printf("%ld %s %s\n", 
+            printf("%ld %s %s", 
                 file_stats[i]->size,
                 file_stats[i]->last_modification,
                 file_stats[i]->filename
             );
+
+            if (file_stats[i]->is_link) {
+                printf(" -> ");
+                if (file_stats[i]->link_target != NULL) {
+                    printf("%s", file_stats[i]->link_target);
+                    free(file_stats[i]->link_target);
+                }
+                else
+                    printf("???");
+            }
+
+            printf("\n");
 
             free(file_stats[i]);
         }

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include <pwd.h>
 #include <grp.h>
 #include <time.h>
@@ -38,6 +39,14 @@ FileStats *get_file_stats(const char *dir_path, struct dirent *entry, bool l_fla
 
     // Obtain the file stats
     if (lstat(pathname, &file_stat) == -1) return NULL;
+
+    // Check if the file is a symlink or not
+    if ((stats->is_link = S_ISLNK(file_stat.st_mode))) {
+        if (file_stat.st_size > 0)
+            stats->link_target = read_link_target(pathname, file_stat.st_size);
+        else
+            stats->link_target = read_link_target(pathname, PATH_MAX);
+    }
 
     // Free the dynamic buffer for storing the pathname
     free(pathname);
@@ -144,6 +153,19 @@ const char *get_permission(mode_t file_mode) {
         file_permission[9] = 'x';
 
     return file_permission;
+}
+
+char *read_link_target(const char *pathname, size_t size) {
+    char *path_buffer = (char *) calloc(size+1, sizeof(char));
+    if (path_buffer == NULL) return NULL;
+
+    if (readlink(pathname, path_buffer, size) == -1) {
+        free(path_buffer);
+        return NULL;
+    }
+
+    path_buffer[size] = '\0';
+    return path_buffer;
 }
 
 size_t no_of_digits(unsigned long n) {

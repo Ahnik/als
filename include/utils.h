@@ -6,6 +6,15 @@
 #include <sys/stat.h>
 #include <limits.h>
 
+// Maximum length for a pathname
+#ifndef PATH_MAX
+#ifdef _POSIX_PATH_MAX
+    #define PATH_MAX (_POSIX_PATH_MAX)
+#else
+    #define PATH_MAX 4096
+#endif
+#endif
+
 // Maximum length for a filename
 #ifndef NAME_MAX
 #ifdef _POSIX_NAME_MAX
@@ -42,6 +51,8 @@ typedef struct _FileStats {
     char username[LOGIN_NAME_MAX];           // file owner name
     char groupname[LOGIN_NAME_MAX];          // file group owner name
     off_t size;                              // file size
+    bool is_link;                            // if the file is a symbolic link or not
+    char *link_target;                       // target of the link if the file is a symlink
     char last_modification[TIMESTAMP_SIZE];  // time of last modification
     char filename[NAME_MAX+1];               // name of the file
 } FileStats;
@@ -62,6 +73,9 @@ const char *get_permission(mode_t file_mode);
 
 // Function to join the directory name and the filename together to form pathname
 char *get_pathname(const char *dir_path, const char *filename);
+
+// Function to read the link target if the file is a symlink
+char *read_link_target(const char *pathname, size_t size);
 
 // Function to get the number of digits in an integer
 size_t no_of_digits(unsigned long n);

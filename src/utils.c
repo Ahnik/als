@@ -190,3 +190,12 @@ int compare_file_stats(const void *a, const void *b) {
 
     return strcoll(s1, s2);
 }
+
+bool check_for_spaces(const char *filename, size_t size) {
+    if (filename == NULL) return false;
+    for (size_t i = 0; i < size; i++) {
+        if (filename[i] == ' ') return true;
+        else if (filename[i] == '\0') break;
+    }
+    return false;
+}

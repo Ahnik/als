@@ -83,4 +83,7 @@ size_t no_of_digits(unsigned long n);
 // Comparator to compare two filestats objects for sorting according to their filenames
 int compare_file_stats(const void *a, const void *b);
 
+// Function to check for spaces
+bool check_for_spaces(const char *filename, size_t size);
+
 #endif

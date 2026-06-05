@@ -160,11 +160,13 @@ int main(int argc, char **argv) {
             printf("%s ", file_stats[i]->groupname);
 
             for (size_t j = no_of_digits(file_stats[i]->size); j < max_len[4]; j++) printf(" ");
-            printf("%ld %s %s", 
+            printf("%ld %s ", 
                 file_stats[i]->size,
-                file_stats[i]->last_modification,
-                file_stats[i]->filename
+                file_stats[i]->last_modification
             );
+
+            if (check_for_spaces(file_stats[i]->filename, NAME_MAX+1)) printf("'%s'", file_stats[i]->filename);
+            else printf("%s", file_stats[i]->filename);
 
             if (file_stats[i]->is_link) {
                 printf(" -> ");
@@ -184,9 +186,10 @@ int main(int argc, char **argv) {
     } else {
         // Print the sorted file_entries
         for (size_t i = 0; i < size; i++) {
-            if (i_flag)
-                printf("%ld ", file_stats[i]->inode);
-            printf("%s  ", file_stats[i]->filename);
+            if (i_flag) printf("%ld ", file_stats[i]->inode);
+
+            if (check_for_spaces(file_stats[i]->filename, NAME_MAX+1)) printf("'%s'  ", file_stats[i]->filename);
+            else printf("%s  ", file_stats[i]->filename);
             free(file_stats[i]);
         }
         printf("\n");

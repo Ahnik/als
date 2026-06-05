@@ -195,3 +195,10 @@ bool check_for_spaces(const char *filename, size_t size) {
     }
     return false;
 }
+
+void print_help() {
+    printf("Usage: als [OPTION]... [DIRECTORY]\n");
+    printf("-a\t\talso show hidden files and 'dot' files\n");
+    printf("-i\t\tlist each file's inode number\n");
+    printf("-l\t\tuse long listing format\n");
+}

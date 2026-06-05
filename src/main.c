@@ -30,9 +30,10 @@ int main(int argc, char **argv) {
     bool a_flag = false;
     bool l_flag = false;
     bool i_flag = false;
+    bool h_flag = false;
 
     // Parse the input flags
-    while ((opt = getopt(argc, argv, "ali")) != -1) {
+    while ((opt = getopt(argc, argv, "ahil")) != -1) {
         switch (opt) {
             case 'a':
                 a_flag = true;
@@ -43,11 +44,20 @@ int main(int argc, char **argv) {
             case 'i':
                 i_flag = true;
                 break;
+            case 'h':
+                h_flag = true;
+                break;
             case '?':
                 return 1;
             default:
                 abort();
         }
+    }
+
+    // If -h argument is used, simply print the help page
+    if (h_flag) {
+        print_help();
+        return 0;
     }
 
     // Get the directory name from the argument list if it is present (The first directory name it can find)

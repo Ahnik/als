@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
 #include <pwd.h>
 #include <grp.h>
@@ -194,6 +195,84 @@ bool check_for_spaces(const char *filename, size_t size) {
         else if (filename[i] == '\0') break;
     }
     return false;
+}
+
+int get_terminal_width() {
+    struct winsize w;
+    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == -1) return 80;
+    return w.ws_col == 0 ? 80 : w.ws_col;
+}
+
+int get_display_length(FileStats *stat, bool i_flag) {
+    int len = strlen(stat->filename);
+    if (check_for_spaces(stat->filename, len)) len += 2;
+    if (i_flag) len += no_of_digits(stat->inode) + 1;
+    return len;
+}
+
+int calc_width(int rows, int size, FileStats **file_stats, bool i_flag) {
+    int cols = (size + rows - 1) / rows;
+    int total_width = 0;
+    for (int c = 0; c < cols; ++c) {
+        int col_width = 0;
+        for (int r = 0; r < rows; ++r) {
+            int idx = c * rows + r;
+            if (idx >= size) break;
+            int width = get_display_length(file_stats[idx], i_flag);
+            if (width > col_width) col_width = width;
+        }
+        total_width += col_width + (c < cols - 1 ? 2 : 0);
+    }
+ 
+    return total_width;
+}
+
+int calc_rows(int size, int terminal_width, FileStats **file_stats, bool i_flag) {
+    int lo = 0, hi = size;
+    while (lo + 1 < hi) {
+        int mid = lo + (hi - lo) / 2;
+        if (calc_width(mid, size, file_stats, i_flag) <= terminal_width) hi = mid;
+        else lo = mid;
+    }
+    return hi;
+}
+
+void print_files(int size, int rows, FileStats **file_stats, bool i_flag) {
+    if (rows == 0) return;
+    int cols = (size + rows - 1) / rows;
+    int cols_width[cols];
+    for (int c = 0; c < cols; ++c) {
+        cols_width[c] = 0;
+        for (int r = 0; r < rows; ++r) {
+            int idx = c * rows + r;
+            if (idx >= size) break;
+            int width = get_display_length(file_stats[idx], i_flag);
+            if (width > cols_width[c]) cols_width[c] = width;
+        }
+    }
+ 
+    for (int r = 0; r < rows; ++r) {
+        for (int c = 0; c < cols; ++c) {
+            int idx = c * rows + r;
+            if (idx >= size) break;
+            char file_buffer[PATH_MAX + NAME_MAX];
+            int current_len = 0;
+            // add inode if i flag is set
+            if (i_flag) current_len += sprintf(file_buffer, "%ld ", file_stats[idx]->inode);
+
+            // add filename with quotes if it contains spaces
+            if (check_for_spaces(file_stats[idx]->filename, strlen(file_stats[idx]->filename)))
+                current_len += sprintf(file_buffer + current_len, "'%s'", file_stats[idx]->filename);
+            else 
+                current_len += sprintf(file_buffer + current_len, "%s", file_stats[idx]->filename);
+
+            if (idx >= size - rows)
+                printf("%s", file_buffer);
+            else
+                printf("%-*s  ", cols_width[c], file_buffer);
+        }
+        printf("\n");
+    }
 }
 
 void print_help() {

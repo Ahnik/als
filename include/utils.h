@@ -88,4 +88,19 @@ bool check_for_spaces(const char *filename, size_t size);
 // Print help page
 void print_help();
 
+// Function to get terminal width
+int get_terminal_width();
+
+// Function to calculate display length of the file entry
+int get_display_length(FileStats *stat, bool i_flag);
+
+// Function to calculate optimal number of rows for multi-column layout
+int calc_rows(int size, int terminal_width, FileStats **file_stats, bool i_flag);
+
+// Function to calculate total width needed for a given number of rows
+int calc_width(int rows, int size, FileStats **file_stats, bool i_flag);
+
+// Function to print files in multi-column format
+void print_files(int size, int rows, FileStats **file_stats, bool i_flag);
+
 #endif

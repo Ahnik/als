@@ -168,7 +168,7 @@ int main(int argc, char **argv) {
             if (check_for_spaces(file_stats[i]->filename, strlen(file_stats[i]->filename))) printf("'%s'", file_stats[i]->filename);
             else printf("%s", file_stats[i]->filename);
 
-            if (file_stats[i]->is_link) {
+            if (file_stats[i]->permission_string[0] == 'l') {
                 printf(" -> ");
                 if (file_stats[i]->link_target != NULL) {
                     printf("%s", file_stats[i]->link_target);

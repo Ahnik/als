@@ -40,8 +40,14 @@ FileStats *get_file_stats(const char *dir_path, struct dirent *entry, bool l_fla
     // Obtain the file stats
     if (lstat(pathname, &file_stat) == -1) return NULL;
 
+    // Enter the number of blocks allocated
+    stats->blocks = file_stat.st_blocks;
+
+    // Enter the password string
+    get_permission(file_stat.st_mode, stats->permission_string);
+
     // Check if the file is a symlink or not
-    if ((stats->is_link = S_ISLNK(file_stat.st_mode))) {
+    if (stats->permission_string[0] == 'l') {
         if (file_stat.st_size > 0)
             stats->link_target = read_link_target(pathname, file_stat.st_size);
         else
@@ -50,12 +56,6 @@ FileStats *get_file_stats(const char *dir_path, struct dirent *entry, bool l_fla
 
     // Free the dynamic buffer for storing the pathname
     free(pathname);
-
-    // Enter the number of blocks allocated
-    stats->blocks = file_stat.st_blocks;
-
-    // Enter the password string
-    stats->permission_string = get_permission(file_stat.st_mode);
 
     // Enter the number of links of the file
     stats->links = file_stat.st_nlink;
@@ -102,18 +102,16 @@ char *get_pathname(const char *dir_path, const char *filename) {
     return pathname;
 }
 
-const char *get_permission(mode_t file_mode) {
-    // Declare the static buffer for the permission string
-    static char file_permission[PERMISSION_STRING_SIZE];
-
+void get_permission(mode_t file_mode, char *file_permission) {
     // Set the entire permission string with hyphens by default
     for (int i = 0; i < PERMISSION_STRING_SIZE-1; i++) {
         file_permission[i] = '-';
     }
-    file_permission[PERMISSION_STRING_SIZE-1] = 0;
+    file_permission[PERMISSION_STRING_SIZE-1] = '\0';
 
-    // Check if the file is a directory or not
-    if (S_ISDIR(file_mode))
+    if (S_ISLNK(file_mode))         // Check if the file is a symbolic link or not
+        file_permission[0] = 'l';
+    else if (S_ISDIR(file_mode))    // Check if the file is a directory or not
         file_permission[0] = 'd';
 
     // Check for read permission of the owner
@@ -151,8 +149,6 @@ const char *get_permission(mode_t file_mode) {
     // Check for execute permission of others
     if ((file_mode & S_IXOTH) == S_IXOTH)
         file_permission[9] = 'x';
-
-    return file_permission;
 }
 
 char *read_link_target(const char *pathname, size_t size) {

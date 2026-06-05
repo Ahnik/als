@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
                 file_stats[i]->last_modification
             );
 
-            if (check_for_spaces(file_stats[i]->filename, NAME_MAX+1)) printf("'%s'", file_stats[i]->filename);
+            if (check_for_spaces(file_stats[i]->filename, strlen(file_stats[i]->filename))) printf("'%s'", file_stats[i]->filename);
             else printf("%s", file_stats[i]->filename);
 
             if (file_stats[i]->is_link) {
@@ -188,7 +188,7 @@ int main(int argc, char **argv) {
         for (size_t i = 0; i < size; i++) {
             if (i_flag) printf("%ld ", file_stats[i]->inode);
 
-            if (check_for_spaces(file_stats[i]->filename, NAME_MAX+1)) printf("'%s'  ", file_stats[i]->filename);
+            if (check_for_spaces(file_stats[i]->filename, strlen(file_stats[i]->filename))) printf("'%s'  ", file_stats[i]->filename);
             else printf("%s  ", file_stats[i]->filename);
             free(file_stats[i]);
         }

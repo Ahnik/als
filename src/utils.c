@@ -240,39 +240,43 @@ int calc_rows(int size, int terminal_width, FileStats **file_stats, bool i_flag)
 void print_files(int size, int rows, FileStats **file_stats, bool i_flag) {
     if (rows == 0) return;
     int cols = (size + rows - 1) / rows;
-    int cols_width[cols];
+    size_t *cols_width = calloc(cols, sizeof(size_t));
+    
     for (int c = 0; c < cols; ++c) {
         cols_width[c] = 0;
         for (int r = 0; r < rows; ++r) {
             int idx = c * rows + r;
             if (idx >= size) break;
-            int width = get_display_length(file_stats[idx], i_flag);
+            size_t width = get_display_length(file_stats[idx], i_flag);
             if (width > cols_width[c]) cols_width[c] = width;
         }
     }
  
+    // print
     for (int r = 0; r < rows; ++r) {
         for (int c = 0; c < cols; ++c) {
             int idx = c * rows + r;
             if (idx >= size) break;
-            char file_buffer[PATH_MAX + NAME_MAX];
+            char file_buffer[PATH_MAX + NAME_MAX + 32];
+            size_t buf_size = sizeof(file_buffer);
             int current_len = 0;
             // add inode if i flag is set
-            if (i_flag) current_len += sprintf(file_buffer, "%ld ", file_stats[idx]->inode);
+            if (i_flag) current_len += snprintf(file_buffer, buf_size, "%ld ", file_stats[idx]->inode);
 
             // add filename with quotes if it contains spaces
             if (check_for_spaces(file_stats[idx]->filename, strlen(file_stats[idx]->filename)))
-                current_len += sprintf(file_buffer + current_len, "'%s'", file_stats[idx]->filename);
+                current_len += snprintf(file_buffer + current_len, buf_size - current_len, "'%s'", file_stats[idx]->filename);
             else 
-                current_len += sprintf(file_buffer + current_len, "%s", file_stats[idx]->filename);
+                current_len += snprintf(file_buffer + current_len, buf_size - current_len, "%s", file_stats[idx]->filename);
 
-            if (idx >= size - rows)
+            if (idx + rows >= size)
                 printf("%s", file_buffer);
             else
-                printf("%-*s  ", cols_width[c], file_buffer);
+                printf("%-*s  ", (int)cols_width[c], file_buffer);
         }
         printf("\n");
     }
+    free(cols_width);
 }
 
 void print_help() {

@@ -27,5 +27,5 @@ A simple, POSIX-compliant program to list information about files in a given dir
 
 <h2>Acknowledgements</h2>
 <p>
-Thanks to <a href="https://github.com/mononeon">mononeon</a> for adding support for the multi-column output layout as well as for helping me with testing this program.
+Thanks to <a href="https://github.com/mononeon">mononeon</a> for implementing multi-column output layout when printing by default and using -i flag as well as for helping me with testing this program.
 </p>

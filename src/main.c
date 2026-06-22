@@ -194,15 +194,12 @@ int main(int argc, char **argv) {
         }
         free(file_stats);
     } else {
-        // Print the sorted file_entries
-        for (size_t i = 0; i < size; i++) {
-            if (i_flag) printf("%ld ", file_stats[i]->inode);
+        int terminal_width = get_terminal_width();
+        int rows = calc_rows(size, terminal_width, file_stats, i_flag);
+        
+        print_files(size, rows, file_stats, i_flag);
 
-            if (check_for_spaces(file_stats[i]->filename, strlen(file_stats[i]->filename))) printf("'%s'  ", file_stats[i]->filename);
-            else printf("%s  ", file_stats[i]->filename);
-            free(file_stats[i]);
-        }
-        printf("\n");
+        for (size_t i = 0; i < size; ++i) free(file_stats[i]);
         free(file_stats);
     }
 

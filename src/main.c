@@ -154,26 +154,19 @@ int main(int argc, char **argv) {
 
         for (size_t i = 0; i < size; i++) {
             if (i_flag) {
-                for (size_t j = no_of_digits(file_stats[i]->inode); j < max_len[0]; j++) printf(" ");
-                printf("%ld ", file_stats[i]->inode);
+                printf("%*ld ", (int) max_len[0], file_stats[i]->inode);
             }
 
             printf("%s ", file_stats[i]->permission_string);
 
-            for (size_t j = no_of_digits(file_stats[i]->links); j < max_len[1]; j++) printf(" ");
-            printf("%ld ", file_stats[i]->links);
+            printf("%*ld ", (int) max_len[1], file_stats[i]->links);
 
-            for (size_t j = strlen(file_stats[i]->username); j < max_len[2]; j++) printf(" ");
-            printf("%s ", file_stats[i]->username);
+            printf("%*s ", (int) max_len[2], file_stats[i]->username);
 
-            for (size_t j = strlen(file_stats[i]->groupname); j < max_len[3]; j++) printf(" ");
-            printf("%s ", file_stats[i]->groupname);
+            printf("%*s ", (int) max_len[3], file_stats[i]->groupname);
 
-            for (size_t j = no_of_digits(file_stats[i]->size); j < max_len[4]; j++) printf(" ");
-            printf("%ld %s ", 
-                file_stats[i]->size,
-                file_stats[i]->last_modification
-            );
+            printf("%*ld ", (int) max_len[4], file_stats[i]->size);
+            printf("%s ", file_stats[i]->last_modification);
 
             if (check_for_spaces(file_stats[i]->filename, strlen(file_stats[i]->filename))) printf("'%s'", file_stats[i]->filename);
             else printf("%s", file_stats[i]->filename);

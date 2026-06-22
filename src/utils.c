@@ -242,8 +242,11 @@ int calc_rows(int size, int terminal_width, FileStats **file_stats, bool i_flag)
 void print_files(int size, int rows, FileStats **file_stats, bool i_flag) {
     if (rows == 0) return;
     int cols = (size + rows - 1) / rows;
+
+    // Array to store the width of each column
     size_t *cols_width = calloc(cols, sizeof(size_t));
-    
+
+    // The width of each column is the size of the filename with maximum length
     for (int c = 0; c < cols; c++) {
         cols_width[c] = 0;
         for (int r = 0; r < rows; r++) {
@@ -268,14 +271,14 @@ void print_files(int size, int rows, FileStats **file_stats, bool i_flag) {
 
             // add filename with quotes if it contains spaces
             if (check_for_spaces(file_stats[index]->filename, strlen(file_stats[index]->filename)))
-                current_len += snprintf(file_buffer + current_len, buf_size - current_len, "'%s'", file_stats[index]->filename);
+                snprintf(&file_buffer[current_len], buf_size - current_len, "'%s'", file_stats[index]->filename);
             else 
-                current_len += snprintf(file_buffer + current_len, buf_size - current_len, "%s", file_stats[index]->filename);
+                snprintf(&file_buffer[current_len], buf_size - current_len, "%s", file_stats[index]->filename);
 
             if (index + rows >= size)
                 printf("%s", file_buffer);
             else
-                printf("%-*s  ", (int)cols_width[c], file_buffer);
+                printf("%-*s  ", (int) cols_width[c], file_buffer);
         }
         printf("\n");
     }

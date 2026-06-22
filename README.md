@@ -6,9 +6,11 @@ A simple, POSIX-compliant program to list information about files in a given dir
 <h2>Options Supported</h2>
 <p>
 <ol>
-    <li>&nbsp;-a&emsp;&emsp;do not ignore entries starting with .</li>
-    <li>&nbsp;-i&emsp;&emsp; the index number for each file</li>
+    <li>&nbsp;-a&emsp;&emsp;also show hidden files and 'dot' files</li>
+    <li>&nbsp;-g&emsp;&emsp;same as -l, except the owner will not be written</li>
+    <li>&nbsp;-i&emsp;&emsp; list each file's inode number</li>
     <li>&nbsp;-l&emsp;&emsp; use the long listing format</li>
+    <li>&nbsp;-o&emsp;&emsp;same as -l, except the owning group will not be written</li>
 </ol>
 </p>
 

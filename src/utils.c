@@ -244,9 +244,9 @@ void print_files(int size, int rows, FileStats **file_stats, bool i_flag) {
     int cols = (size + rows - 1) / rows;
     size_t *cols_width = calloc(cols, sizeof(size_t));
     
-    for (int c = 0; c < cols; ++c) {
+    for (int c = 0; c < cols; c++) {
         cols_width[c] = 0;
-        for (int r = 0; r < rows; ++r) {
+        for (int r = 0; r < rows; r++) {
             int index = c * rows + r;
             if (index >= size) break;
             size_t width = get_display_length(file_stats[index], i_flag);
@@ -255,8 +255,8 @@ void print_files(int size, int rows, FileStats **file_stats, bool i_flag) {
     }
  
     // print
-    for (int r = 0; r < rows; ++r) {
-        for (int c = 0; c < cols; ++c) {
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
             int index = c * rows + r;
             if (index >= size) break;
             char file_buffer[PATH_MAX + NAME_MAX + 32];

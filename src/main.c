@@ -199,7 +199,7 @@ int main(int argc, char **argv) {
         
         print_files(size, rows, file_stats, i_flag);
 
-        for (size_t i = 0; i < size; ++i) free(file_stats[i]);
+        for (size_t i = 0; i < size; i++) free(file_stats[i]);
         free(file_stats);
     }
 

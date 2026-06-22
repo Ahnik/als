@@ -56,6 +56,17 @@ typedef struct _FileStats {
     char filename[NAME_MAX+1];                                // name of the file
 } FileStats;
 
+// Enum to represent all the flags supported by this program
+typedef enum _Flag {
+    A_FLAG = 0,
+    L_FLAG,
+    H_FLAG,
+    I_FLAG,
+    O_FLAG,
+    G_FLAG,
+    NUM_FLAGS,
+} Flag;
+
 // A macro function to swap two elements in an array
 #define SWAP(type, arr, a, b) \
     do { \
@@ -65,7 +76,7 @@ typedef struct _FileStats {
     } while (0)
 
 // Function to get the file stats of a file
-FileStats *get_file_stats(const char *dir_path, struct dirent *entry, bool l_flag);
+FileStats *get_file_stats(const char *dir_path, struct dirent *entry, bool long_output);
 
 // Function to extract read, write and execute permissions of the owner, group and others
 void get_permission(mode_t file_mode, char *file_permission);

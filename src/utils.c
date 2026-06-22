@@ -11,7 +11,7 @@
 #include <time.h>
 #include "utils.h"
 
-FileStats *get_file_stats(const char *dir_path, struct dirent *entry, bool l_flag) {
+FileStats *get_file_stats(const char *dir_path, struct dirent *entry, bool long_output) {
     FileStats *stats;               // Struct for storing the final formatted file stats
     char *pathname;                 // Pathname of the directory or file that we are printing
     struct stat file_stat;          // Struct for storing file stats
@@ -30,7 +30,7 @@ FileStats *get_file_stats(const char *dir_path, struct dirent *entry, bool l_fla
     snprintf(stats->filename, NAME_MAX+1, "%s", entry->d_name);
 
     // If l flag is not set, then we'll just need the inode number and filename
-    if (l_flag == false) return stats;
+    if (long_output == false) return stats;
 
     // Get the full pathname
     pathname = get_pathname(dir_path, entry->d_name);
@@ -296,6 +296,8 @@ void print_files(int size, int rows, FileStats **file_stats, bool i_flag) {
 void print_help() {
     printf("Usage: als [OPTION]... [DIRECTORY]\n");
     printf("-a\t\talso show hidden files and 'dot' files\n");
+    printf("-g\t\tsame as -l, except the owner will not be written\n");
     printf("-i\t\tlist each file's inode number\n");
     printf("-l\t\tuse long listing format\n");
+    printf("-o\t\tsame as -l, except the owning group will not be written\n");
 }

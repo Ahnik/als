@@ -25,27 +25,28 @@ int main(int argc, char **argv) {
     size_t total_blocks = 0;
     size_t max_len[NUM_VARIABLE_FIELDS] = {0};
     FileStats **file_stats = NULL;
-
-    // Flags used
-    bool a_flag = false;
-    bool l_flag = false;
-    bool i_flag = false;
-    bool h_flag = false;
+    bool flags[NUM_FLAGS] = {false};
 
     // Parse the input flags
-    while ((opt = getopt(argc, argv, "ahil")) != -1) {
+    while ((opt = getopt(argc, argv, "ahilog")) != -1) {
         switch (opt) {
             case 'a':
-                a_flag = true;
+                flags[A_FLAG] = true;
                 break;
             case 'l':
-                l_flag = true;
+                flags[L_FLAG] = true;
                 break;
             case 'i':
-                i_flag = true;
+                flags[I_FLAG] = true;
                 break;
             case 'h':
-                h_flag = true;
+                flags[H_FLAG] = true;
+                break;
+            case 'o':
+                flags[O_FLAG] = true;
+                break;
+            case 'g':
+                flags[G_FLAG] = true;
                 break;
             case '?':
                 return 1;
@@ -55,7 +56,7 @@ int main(int argc, char **argv) {
     }
 
     // If -h argument is used, simply print the help page
-    if (h_flag) {
+    if (flags[H_FLAG]) {
         print_help();
         return 0;
     }
@@ -78,7 +79,7 @@ int main(int argc, char **argv) {
 
     // Read all entries in the directory stream
     while ((entry = readdir(directory)) != NULL) {
-        if (a_flag || (entry->d_name[0] != '.')) {
+        if (flags[A_FLAG] || (entry->d_name[0] != '.')) {
             size++;
             // Check whether size of the memory length would cause an overflow
             if (size > SIZE_MAX / sizeof(FileStats *)) {
@@ -98,7 +99,7 @@ int main(int argc, char **argv) {
             }
 
             // Get all the file metadata
-            file_stats[size-1] = get_file_stats(dir_path, entry, l_flag);
+            file_stats[size-1] = get_file_stats(dir_path, entry, flags[L_FLAG] || flags[O_FLAG] || flags[G_FLAG]);
 
             // If there has been any problem in fetching file stats, exit
             if (file_stats[size-1] == NULL) {
@@ -109,7 +110,7 @@ int main(int argc, char **argv) {
                 return 1;
             }
 
-            if (l_flag) {
+            if (flags[L_FLAG] || flags[O_FLAG] || flags[G_FLAG]) {
                 // Compare the inode number, links number, username, groupname and size of the file
                 if (no_of_digits(file_stats[size-1]->inode) > max_len[0])
                     max_len[0] = no_of_digits(file_stats[size-1]->inode);
@@ -126,7 +127,7 @@ int main(int argc, char **argv) {
                 total_blocks += file_stats[size-1]->blocks;
             }
 
-            if (a_flag) {
+            if (flags[A_FLAG]) {
                 // If the entry name is '.', then put it at the top
                 if (size > 1 && (strncmp(file_stats[size-1]->filename, ".", sizeof(".")) == 0))
                     SWAP(FileStats *, file_stats, size-1, 0);
@@ -141,19 +142,19 @@ int main(int argc, char **argv) {
     }
 
     // Sort the array of filestats by their file_entries
-    if (a_flag) {
+    if (flags[A_FLAG]) {
         if (size > 2) qsort(&file_stats[2], size-2, sizeof(FileStats *), &compare_file_stats);
     } else
         qsort(file_stats, size, sizeof(FileStats *), &compare_file_stats);
 
     // Print all the data about each file
-    if (l_flag) {
+    if (flags[L_FLAG] || flags[O_FLAG] || flags[G_FLAG]) {
         // Print the total number of blocks allocated to all files in the directory
         total_blocks = total_blocks >> 1;       // ls command gives 1024-byte blocks while struct stat reports 512-byte blocks
         printf("total %ld\n", total_blocks);
 
         for (size_t i = 0; i < size; i++) {
-            if (i_flag) {
+            if (flags[I_FLAG]) {
                 printf("%*ld ", (int) max_len[0], file_stats[i]->inode);
             }
 
@@ -161,9 +162,11 @@ int main(int argc, char **argv) {
 
             printf("%*ld ", (int) max_len[1], file_stats[i]->links);
 
-            printf("%*s ", (int) max_len[2], file_stats[i]->username);
+            if (!flags[G_FLAG])
+                printf("%*s ", (int) max_len[2], file_stats[i]->username);
 
-            printf("%*s ", (int) max_len[3], file_stats[i]->groupname);
+            if (!flags[O_FLAG])
+                printf("%*s ", (int) max_len[3], file_stats[i]->groupname);
 
             printf("%*ld ", (int) max_len[4], file_stats[i]->size);
             printf("%s ", file_stats[i]->last_modification);
@@ -188,9 +191,9 @@ int main(int argc, char **argv) {
         free(file_stats);
     } else {
         int terminal_width = get_terminal_width();
-        int rows = calc_rows(size, terminal_width, file_stats, i_flag);
+        int rows = calc_rows(size, terminal_width, file_stats, flags[I_FLAG]);
         
-        print_files(size, rows, file_stats, i_flag);
+        print_files(size, rows, file_stats, flags[I_FLAG]);
 
         for (size_t i = 0; i < size; i++) free(file_stats[i]);
         free(file_stats);

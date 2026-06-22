@@ -114,6 +114,14 @@ void get_permission(mode_t file_mode, char *file_permission) {
         file_permission[0] = 'l';
     else if (S_ISDIR(file_mode))    // Check if the file is a directory or not
         file_permission[0] = 'd';
+    else if (S_ISSOCK(file_mode))   // Check if the file is a socket or not
+        file_permission[0] = 's';
+    else if (S_ISFIFO(file_mode))   // Check if the file is a named pipe (FIFO) or not
+        file_permission[0] = 'p';
+    else if (S_ISCHR(file_mode))    // Check if the file is a character special file or not
+        file_permission[0] = 'c';
+    else if (S_ISBLK(file_mode))    // Check if the file is a block special file or not
+        file_permission[0] = 'b';
 
     // Check for read permission of the owner
     if ((file_mode & S_IRUSR) == S_IRUSR)
